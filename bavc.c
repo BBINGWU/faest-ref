@@ -84,6 +84,7 @@ ATTR_PURE static inline unsigned int pos_in_tree(unsigned int i, unsigned int j,
 }
 
 // BAVC.Commit for FAEST
+// 真正做bavc_commitment
 static void bavc_commit_faest(bavc_t* bavc, const uint8_t* root_key, const uint8_t* iv,
                               const faest_paramset_t* params) {
   const unsigned int lambda       = params->lambda;

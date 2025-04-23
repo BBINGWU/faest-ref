@@ -222,6 +222,7 @@ static
          set_bit(get_bit(in, 2), 3);
 }
 
+// aes_witness奇数轮
 static uint8_t* store_invnorm_state(uint8_t* dst, aes_block_t state, unsigned int block_words) {
   for (unsigned int i = 0; i != block_words * 4; i += 2, ++dst) {
     uint8_t normstate_lo = invnorm(state[i / 4][i % 4]);
@@ -231,6 +232,7 @@ static uint8_t* store_invnorm_state(uint8_t* dst, aes_block_t state, unsigned in
   return dst;
 }
 
+// aes_witness偶数轮
 static uint8_t* store_state(uint8_t* dst, aes_block_t state, unsigned int block_words) {
   for (unsigned int i = 0; i != block_words * 4; ++i, ++dst) {
     bf8_store(dst, state[i / 4][i % 4]);

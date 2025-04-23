@@ -64,6 +64,8 @@ static
   return depth;
 }
 
+
+// VOLE承诺
 void vole_commit(const uint8_t* rootKey, const uint8_t* iv, unsigned int ellhat,
                  const faest_paramset_t* params, bavc_t* bavc, uint8_t* c, uint8_t* u,
                  uint8_t** v) {
@@ -102,6 +104,7 @@ void vole_commit(const uint8_t* rootKey, const uint8_t* iv, unsigned int ellhat,
   free(ui);
 }
 
+// VOLE reconstruct 
 bool vole_reconstruct(uint8_t* com, uint8_t** q, const uint8_t* iv, const uint8_t* chall_3,
                       const uint8_t* decom_i, const uint8_t* c, unsigned int ellhat,
                       const faest_paramset_t* params) {

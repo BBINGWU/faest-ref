@@ -328,6 +328,7 @@ static inline void aes_verify(uint8_t* a0_tilde, const uint8_t* d, uint8_t** Q,
 }
 
 // FAEST.Sign()
+// 实际签名流程
 void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msg_len, const uint8_t* owf_key,
                 const uint8_t* owf_input, const uint8_t* owf_output, const uint8_t* witness,
                 const uint8_t* rho, size_t rholen, const faest_paramset_t* params) {
@@ -340,15 +341,18 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msg_len, const uint8_t*
   const unsigned int w_grind       = params->w_grind;
 
   // ::3
+  // 按照论文里的说法 challenge_0=miu(mu)
   uint8_t mu[MAX_LAMBDA_BYTES * 2];
   hash_mu(mu, owf_input, params->owf_input_size, owf_output, params->owf_output_size, msg, msg_len,
           lambda);
 
   // ::4-5
+  // 生成PRG seed 和 IV
   uint8_t rootkey[MAX_LAMBDA_BYTES], iv[IV_SIZE];
   hash_r_iv(rootkey, signature_iv_pre(sig, params), iv, owf_key, mu, rho, rholen, lambda);
 
   // ::6-7
+  // 做 VOLE-commitment
   bavc_t bavc;
   uint8_t* u = malloc(ell_hat_bytes);
   assert(u);
@@ -363,16 +367,19 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msg_len, const uint8_t*
   vole_commit(rootkey, iv, ell_hat, params, &bavc, signature_c(sig, 0, params), u, V);
 
   // ::8
+  // 计算第一次挑战 对VOLE做hash
   uint8_t chall_1[(5 * MAX_LAMBDA_BYTES) + 8];
   hash_challenge_1(chall_1, mu, bavc.h, signature_c(sig, 0, params), iv, lambda, ell, tau);
 
   // ::9-10
+  // 做consistency check
   vole_hash(signature_u_tilde(sig, params), chall_1, u, ell, lambda);
 
   // ::11-12
   // To save memory consumption, the chall_2 is computed in an
   // Init-Update-Finalize style as V_tilde is only fed into to the hash and not
   // used elsewhere.
+  // 第二次挑战
   H2_context_t chall_2_ctx;
   hash_challenge_2_init(&chall_2_ctx, chall_1, signature_u_tilde(sig, params), lambda);
   {
@@ -394,6 +401,7 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msg_len, const uint8_t*
   hash_challenge_2_finalize(chall_2, &chall_2_ctx, signature_d(sig, params), lambda, ell);
 
   // ::16-20
+  // aes_prove不知道是怎么做的
   uint8_t a0_tilde[MAX_LAMBDA_BYTES];
   aes_prove(a0_tilde, signature_a1_tilde(sig, params), signature_a2_tilde(sig, params), witness,
             u + ell_bytes, V, owf_input, owf_output, chall_2, params);
@@ -403,6 +411,7 @@ void faest_sign(uint8_t* sig, const uint8_t* msg, size_t msg_len, const uint8_t*
   u = NULL;
 
   // ::21-22
+  // 第三次挑战
   H2_context_t chall_3_ctx;
   hash_challenge_3_init(&chall_3_ctx, chall_2, a0_tilde, signature_a1_tilde(sig, params),
                         signature_a2_tilde(sig, params), lambda);
